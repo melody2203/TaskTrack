@@ -1,12 +1,16 @@
 import React from 'react';
 import api from '../api/api';
+import { useAuth } from '../context/AuthContext';
 
 const MemberView = ({ tasks, refreshTasks }) => {
+    const { user: currentUser } = useAuth();
+
     const updateStatus = async (id, status) => {
         try {
             await api.put(`/tasks/${id}`, { status });
             refreshTasks();
         } catch (err) {
+            console.error('Status update failed', err);
             alert('Status update failed');
         }
     };
@@ -22,45 +26,99 @@ const MemberView = ({ tasks, refreshTasks }) => {
         return new Date(deadline) < new Date();
     };
 
-    return (
-        <div className="bg-white p-6 rounded shadow overflow-y-auto">
-            <h2 className="text-xl font-bold mb-6">Assigned Tasks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tasks.map(task => (
-                    <div
-                        key={task.id}
-                        className={`p-4 border rounded relative ${task.status === 'DONE' ? 'opacity-75' :
-                                isOverdue(task.deadline) ? 'border-red-500 bg-red-50' :
-                                    isDeadlineNear(task.deadline) ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
-                            }`}
-                    >
-                        {isOverdue(task.deadline) && task.status !== 'DONE' && (
-                            <span className="absolute top-2 right-2 text-xs text-red-600 font-bold uppercase">Overdue</span>
-                        )}
-                        <h3 className="font-bold text-lg">{task.title}</h3>
-                        <p className="text-gray-600 text-sm mb-4">{task.description}</p>
-                        <p className="text-xs text-gray-500 mb-4">
-                            Deadline: {new Date(task.deadline).toLocaleDateString()}
-                        </p>
+    const myTasks = tasks.filter(t => t.assigned_to_id === currentUser.id);
+    const otherTasks = tasks.filter(t => t.assigned_to_id !== currentUser.id);
 
-                        <div className="flex gap-2 mt-4">
-                            {['PENDING', 'IN_PROGRESS', 'DONE'].map(status => (
-                                <button
-                                    key={status}
-                                    onClick={() => updateStatus(task.id, status)}
-                                    className={`text-xs px-2 py-1 rounded transition ${task.status === status
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }`}
-                                >
-                                    {status.replace('_', ' ')}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-                {tasks.length === 0 && <p className="text-gray-500 italic">No tasks assigned to you yet.</p>}
+    const TaskCard = ({ task, isOwn }) => (
+        <div
+            className={`p-5 bg-white border rounded-xl shadow-sm relative transition duration-300 hover:shadow-md ${task.status === 'DONE' ? 'opacity-70 grayscale-[0.2]' :
+                isOverdue(task.deadline) ? 'border-red-200 bg-red-50' :
+                    isDeadlineNear(task.deadline) ? 'border-yellow-200 bg-yellow-50' : 'border-gray-100'
+                }`}
+        >
+            <div className="flex justify-between items-start mb-3">
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight ${task.status === 'DONE' ? 'bg-green-100 text-green-700' :
+                    task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                    {task.status.replace('_', ' ')}
+                </span>
+                {isOverdue(task.deadline) && task.status !== 'DONE' && (
+                    <span className="text-[10px] text-red-600 font-black uppercase bg-red-100 px-2 py-0.5 rounded-full">Overdue</span>
+                )}
             </div>
+
+            <h3 className="font-bold text-gray-800 text-lg mb-1 leading-tight">{task.title}</h3>
+            <p className="text-gray-500 text-sm mb-4 line-clamp-2">{task.description}</p>
+
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[8px] font-bold">
+                    {task.assigned_to?.name?.charAt(0) || '?'}
+                </div>
+                <span className="text-xs font-medium text-gray-600">
+                    {isOwn ? 'Assigned to Me' : `Assigned to ${task.assigned_to?.name || 'Unknown'}`}
+                </span>
+            </div>
+
+            <p className={`text-[11px] font-semibold mb-5 ${isOverdue(task.deadline) && task.status !== 'DONE' ? 'text-red-500' : 'text-gray-400'}`}>
+                📅 Deadline: {new Date(task.deadline).toLocaleDateString()}
+            </p>
+
+            {isOwn && (
+                <div className="flex gap-2 border-t pt-4">
+                    {['PENDING', 'IN_PROGRESS', 'DONE'].map(status => (
+                        <button
+                            key={status}
+                            onClick={() => updateStatus(task.id, status)}
+                            className={`flex-1 text-[10px] font-bold py-1.5 rounded-lg transition duration-200 ${task.status === status
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 border border-gray-100'
+                                }`}
+                        >
+                            {status === 'IN_PROGRESS' ? 'WORKING' : status}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    return (
+        <div className="space-y-10 pb-10">
+            <section>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                        🎯
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-800 tracking-tight">My Tasks</h2>
+                </div>
+                {myTasks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {myTasks.map(task => <TaskCard key={task.id} task={task} isOwn={true} />)}
+                    </div>
+                ) : (
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-12 text-center">
+                        <p className="text-gray-400 font-medium">No tasks assigned to you right now. Take a break! ☕</p>
+                    </div>
+                )}
+            </section>
+
+            <section>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                        🌐
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-800 tracking-tight text-opacity-80">Team Overview</h2>
+                </div>
+                {otherTasks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-85">
+                        {otherTasks.map(task => <TaskCard key={task.id} task={task} isOwn={false} />)}
+                    </div>
+                ) : (
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-8 text-center">
+                        <p className="text-gray-400 font-medium text-sm">No other tasks in the pipeline.</p>
+                    </div>
+                )}
+            </section>
         </div>
     );
 };

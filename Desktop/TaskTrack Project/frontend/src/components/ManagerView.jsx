@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api/api';
 
 const ManagerView = ({ tasks, refreshTasks }) => {
     const [formData, setFormData] = useState({ title: '', description: '', assigned_to_id: '', deadline: '' });
+    const [members, setMembers] = useState([]);
+    const [fetchError, setFetchError] = useState(null);
+
+    useEffect(() => {
+        fetchMembers();
+    }, []);
+
+    const fetchMembers = async () => {
+        try {
+            setFetchError(null);
+            const { data } = await api.get('/users');
+            setMembers(data);
+        } catch (err) {
+            console.error('Failed to fetch members:', err);
+            setFetchError('Could not load member list. You can still use the manual ID entry.');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -10,8 +27,10 @@ const ManagerView = ({ tasks, refreshTasks }) => {
             await api.post('/tasks', formData);
             setFormData({ title: '', description: '', assigned_to_id: '', deadline: '' });
             refreshTasks();
+            alert('Task assigned successfully!');
         } catch (err) {
-            alert('Task creation failed');
+            console.error('Task creation error:', err.response?.data || err.message);
+            alert(`Task creation failed: ${err.response?.data?.error || 'Unknown error'}`);
         }
     };
 
@@ -22,83 +41,142 @@ const ManagerView = ({ tasks, refreshTasks }) => {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="bg-white p-6 rounded shadow">
-                <h2 className="text-lg font-bold mb-4">Create New Task</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        type="text"
-                        placeholder="Title"
-                        className="w-full p-2 border rounded"
-                        value={formData.title}
-                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                        required
-                    />
-                    <textarea
-                        placeholder="Description"
-                        className="w-full p-2 border rounded"
-                        value={formData.description}
-                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Assigned To (User ID)"
-                        className="w-full p-2 border rounded"
-                        value={formData.assigned_to_id}
-                        onChange={e => setFormData({ ...formData, assigned_to_id: e.target.value })}
-                        required
-                    />
-                    <input
-                        type="date"
-                        className="w-full p-2 border rounded"
-                        value={formData.deadline}
-                        onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                        required
-                    />
-                    <button className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">
-                        Assign Task
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800">Assign New Task</h2>
+                    <button
+                        onClick={fetchMembers}
+                        className="text-[10px] bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 text-gray-500"
+                    >
+                        🔄 Refresh Members
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                        <input
+                            type="text"
+                            placeholder="e.g., Design Landing Page"
+                            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                            value={formData.title}
+                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                            placeholder="Details about the task..."
+                            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 transition shadow-sm h-32"
+                            value={formData.description}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Assign To (Dropdown)</label>
+                            <select
+                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                                value={formData.assigned_to_id}
+                                onChange={e => setFormData({ ...formData, assigned_to_id: e.target.value })}
+                            >
+                                <option value="">Select a member</option>
+                                {members.map(member => (
+                                    <option key={member.id} value={member.id}>
+                                        [ID: {member.id}] {member.name} ({member.email})
+                                    </option>
+                                ))}
+                            </select>
+                            {fetchError && <p className="text-[10px] text-red-500">{fetchError}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Manual ID Assignment</label>
+                            <input
+                                type="number"
+                                placeholder="Enter Member ID manually"
+                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                                value={formData.assigned_to_id}
+                                onChange={e => setFormData({ ...formData, assigned_to_id: e.target.value })}
+                                required
+                            />
+                            <p className="text-[9px] text-gray-400 mt-1">Both fields update the same value.</p>
+                        </div>
+                    </div>
+
+                    <div className="w-full">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                        <input
+                            type="date"
+                            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                            value={formData.deadline}
+                            onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                            required
+                        />
+                    </div>
+
+                    <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg mt-4">
+                        🚀 Assign Task
                     </button>
                 </form>
             </section>
 
-            <section>
-                <div className="mb-4 bg-white p-6 rounded shadow">
-                    <h2 className="text-lg font-bold mb-2">Progress Summary</h2>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
+            <section className="space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                    <h2 className="text-xl font-bold mb-4 text-gray-800">Team Progress</h2>
+                    <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden shadow-inner">
                         <div
-                            className="bg-blue-600 h-4 rounded-full transition-all duration-500"
+                            className="bg-blue-600 h-4 rounded-full transition-all duration-700 ease-out"
                             style={{ width: `${calculateProgress()}%` }}
                         ></div>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">{calculateProgress()}% tasks completed</p>
+                    <div className="flex justify-between mt-3">
+                        <p className="text-sm font-semibold text-gray-600">{calculateProgress()}% Completed</p>
+                        <p className="text-sm text-gray-500">{tasks.length} total tasks</p>
+                    </div>
                 </div>
 
-                <div className="bg-white p-6 rounded shadow h-[400px] overflow-y-auto">
-                    <h2 className="text-lg font-bold mb-4">Task List</h2>
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="py-2">Title</th>
-                                <th className="py-2">Assignee</th>
-                                <th className="py-2">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tasks.map(task => (
-                                <tr key={task.id} className="border-b">
-                                    <td className="py-2">{task.title}</td>
-                                    <td className="py-2">{task.assigned_to?.name || `ID: ${task.assigned_to_id}`}</td>
-                                    <td className="py-2">
-                                        <span className={`px-2 py-1 rounded text-xs ${task.status === 'DONE' ? 'bg-green-100 text-green-800' :
-                                                task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100'
-                                            }`}>
-                                            {task.status}
-                                        </span>
-                                    </td>
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-[500px] overflow-hidden flex flex-col">
+                    <h2 className="text-xl font-bold mb-6 text-gray-800">Task Overview</h2>
+                    <div className="overflow-y-auto flex-grow">
+                        <table className="w-full text-left">
+                            <thead className="sticky top-0 bg-white">
+                                <tr className="border-b-2 border-gray-100 text-gray-400 text-sm uppercase tracking-wider">
+                                    <th className="py-3 font-semibold">Title</th>
+                                    <th className="py-3 font-semibold">Member (ID)</th>
+                                    <th className="py-3 font-semibold">Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {tasks.map(task => (
+                                    <tr key={task.id} className="hover:bg-gray-50 transition">
+                                        <td className="py-4 font-medium text-gray-800">{task.title}</td>
+                                        <td className="py-4 text-gray-600 flex items-center gap-2 text-sm">
+                                            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                {task.assigned_to?.name?.charAt(0) || '?'}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{task.assigned_to?.name || 'Unassigned'}</p>
+                                                <p className="text-[10px] text-gray-400">ID: {task.assigned_to_id}</p>
+                                            </div>
+                                        </td>
+                                        <td className="py-4">
+                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter shadow-sm ${task.status === 'DONE' ? 'bg-green-100 text-green-700' :
+                                                task.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {task.status.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {tasks.length === 0 && <div className="text-center py-10 text-gray-400">No tasks created yet.</div>}
+                    </div>
                 </div>
             </section>
         </div>
@@ -106,3 +184,5 @@ const ManagerView = ({ tasks, refreshTasks }) => {
 };
 
 export default ManagerView;
+
+

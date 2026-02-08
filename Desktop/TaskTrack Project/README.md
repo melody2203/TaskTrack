@@ -4,7 +4,7 @@ A simple but functional task management system for teams.
 
 ## Tech Stack
 - **Frontend**: React (Vite), Tailwind CSS, Axios, React Router.
-- **Backend**: Node.js, Express, Prisma (PostgreSQL).
+- **Backend**: Node.js, Express, Sequelize (SQLite/PostgreSQL).
 - **Auth**: JWT-based authentication.
 
 ## Getting Started

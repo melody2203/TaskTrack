@@ -1,38 +1,34 @@
-const prisma = require('../config/prisma');
+const { Task, User } = require('../config/models');
 
 exports.createTask = async (req, res) => {
     const { title, description, assigned_to_id, deadline } = req.body;
 
     try {
-        const task = await prisma.task.create({
-            data: {
-                title,
-                description,
-                deadline: new Date(deadline),
-                assigned_to_id: parseInt(assigned_to_id),
-                created_by_id: req.user.id,
-            },
+        const task = await Task.create({
+            title,
+            description,
+            deadline: new Date(deadline),
+            assigned_to_id: parseInt(assigned_to_id),
+            created_by_id: req.user.id,
         });
         res.status(201).json(task);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 exports.getTasks = async (req, res) => {
     try {
-        let tasks;
-        if (req.user.role === 'MANAGER') {
-            tasks = await prisma.task.findMany({
-                include: { assigned_to: { select: { name: true, email: true } } },
-            });
-        } else {
-            tasks = await prisma.task.findMany({
-                where: { assigned_to_id: req.user.id },
-            });
-        }
+        const tasks = await Task.findAll({
+            include: [
+                { model: User, as: 'assigned_to', attributes: ['name', 'email'] },
+                { model: User, as: 'created_by', attributes: ['name'] }
+            ],
+        });
         res.json(tasks);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -42,21 +38,19 @@ exports.updateTaskStatus = async (req, res) => {
     const { status } = req.body;
 
     try {
-        const task = await prisma.task.findUnique({ where: { id: parseInt(id) } });
+        const task = await Task.findByPk(id);
 
         if (!task) return res.status(404).json({ error: 'Task not found' });
 
-        // Members can only update their own tasks
         if (req.user.role === 'MEMBER' && task.assigned_to_id !== req.user.id) {
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const updatedTask = await prisma.task.update({
-            where: { id: parseInt(id) },
-            data: { status },
-        });
-        res.json(updatedTask);
+        task.status = status;
+        await task.save();
+        res.json(task);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -65,9 +59,13 @@ exports.deleteTask = async (req, res) => {
     const { id } = req.params;
 
     try {
-        await prisma.task.delete({ where: { id: parseInt(id) } });
+        const task = await Task.findByPk(id);
+        if (!task) return res.status(404).json({ error: 'Task not found' });
+
+        await task.destroy();
         res.json({ message: 'Task deleted' });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 };
