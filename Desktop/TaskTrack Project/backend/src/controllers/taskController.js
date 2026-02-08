@@ -33,20 +33,29 @@ exports.getTasks = async (req, res) => {
     }
 };
 
-exports.updateTaskStatus = async (req, res) => {
+exports.updateTask = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { title, description, assigned_to_id, deadline, status } = req.body;
 
     try {
         const task = await Task.findByPk(id);
-
         if (!task) return res.status(404).json({ error: 'Task not found' });
 
-        if (req.user.role === 'MEMBER' && task.assigned_to_id !== req.user.id) {
-            return res.status(403).json({ error: 'Forbidden' });
+        // If it's a member, they can only update status of their own task
+        if (req.user.role === 'MEMBER') {
+            if (task.assigned_to_id !== req.user.id) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+            if (status) task.status = status;
+        } else if (req.user.role === 'MANAGER') {
+            // Managers can update everything
+            if (title) task.title = title;
+            if (description !== undefined) task.description = description;
+            if (assigned_to_id) task.assigned_to_id = parseInt(assigned_to_id);
+            if (deadline) task.deadline = new Date(deadline);
+            if (status) task.status = status;
         }
 
-        task.status = status;
         await task.save();
         res.json(task);
     } catch (err) {
