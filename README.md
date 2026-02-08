@@ -1,30 +1,34 @@
-# Team Task Management App
+# Task Management App
 
-A simple but functional task management system for teams.
+A collaborative task accomplishment management system where project managers assign tasks and deadlines, and team members track and mark completed work in real time.
 
-## Tech Stack
-- **Frontend**: React (Vite), Tailwind CSS, Axios, React Router.
-- **Backend**: Node.js, Express, Sequelize (SQLite/PostgreSQL).
-- **Auth**: JWT-based authentication.
+## 🚀 Features
 
-## Getting Started
+- **Role-based authentication** (Manager / Team Member)
+- **Task creation and assignment** (Manager)
+- **Task status tracking** (Pending / In Progress / Done)
+- **Deadline visibility and progress overview**
+- **Clean and simple UI** for fast collaboration
 
-### Prerequisites
-- Node.js installed.
-- PostgreSQL database (or update `prisma/schema.prisma` to use `sqlite` for testing).
+## 🛠 Tech Stack
 
-### Backend Setup
-1. Navigate to the `backend` folder.
-2. Install dependencies: `npm install`.
-3. Create a `.env` file from `.env.example` and add your `DATABASE_URL` and `JWT_SECRET`.
-4. Run Prisma migrations: `npx prisma migrate dev --name init`.
-5. Start the server: `npm run dev`.
+- **Frontend:** React
+- **Backend:** Node.js, Express
+- **Database:** PostgreSQL
+- **Authentication:** JWT
 
-### Frontend Setup
-1. Navigate to the `frontend` folder.
-2. Install dependencies: `npm install`.
-3. Start the application: `npm run dev`.
+## 👥 User Roles
 
-## User Roles
-1. **Manager**: Can create, assign, and delete tasks. Can see progress of all tasks.
-2. **Member**: Can see assigned tasks and update status (Pending, In Progress, Done). Highlighting for near-deadline or overdue tasks.
+- **Project Manager:** Create, assign, and monitor tasks
+- **Team Member:** View assigned tasks and mark work as completed
+
+## ⚙️ Setup
+
+1. **Clone the repository**
+2. **Install dependencies** for frontend and backend
+3. **Configure PostgreSQL** and environment variables
+4. **Run backend and frontend servers**
+
+## 🎯 Goal
+
+Designed as a simple, scalable MVP to demonstrate real-world team workflow and task accountability within a short development timeline.
