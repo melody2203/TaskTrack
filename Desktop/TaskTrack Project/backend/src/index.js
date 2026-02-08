@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
+const { initScheduler } = require('./scheduler');
 const { sequelize } = require('./config/models');
 
 dotenv.config();
@@ -23,6 +24,8 @@ app.get('/', (req, res) => {
 });
 
 sequelize.sync({ force: false }).then(() => {
+    console.log('Database connected and synced');
+    initScheduler();
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
