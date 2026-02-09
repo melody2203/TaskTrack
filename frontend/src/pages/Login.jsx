@@ -15,7 +15,9 @@ const Login = () => {
             await login(email, password);
             navigate('/dashboard');
         } catch (err) {
-            setError(err.response?.data?.error || 'Login failed');
+            console.error("Login Error:", err);
+            const errorMessage = err.response?.data?.error || err.message || 'Login failed. Please check your network or try again.';
+            setError(errorMessage);
         }
     };
 
