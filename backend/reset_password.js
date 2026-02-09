@@ -1,29 +1,28 @@
-const { User, sequelize } = require('./src/config/models');
 const bcrypt = require('bcryptjs');
+const { User } = require('./src/config/models');
+const { sequelize } = require('./src/config/models');
 
 async function resetPassword() {
     try {
-        await sequelize.authenticate();
-        console.log('Database connected.');
-
         const email = 'merertuphilip@gmail.com';
         const newPassword = 'password123';
+
+        console.log(`Resetting password for ${email}...`);
+
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        const user = await User.findOne({ where: { email } });
+        const [updatedRows] = await User.update(
+            { password: hashedPassword },
+            { where: { email } }
+        );
 
-        if (!user) {
-            console.log(`User with email ${email} not found.`);
-            return;
+        if (updatedRows > 0) {
+            console.log('Password reset successfully.');
+        } else {
+            console.log('User not found or password not updated.');
         }
-
-        user.password = hashedPassword;
-        await user.save();
-
-        console.log(`Password for ${email} has been successfully reset to: ${newPassword}`);
-
-    } catch (error) {
-        console.error('Error resetting password:', error);
+    } catch (err) {
+        console.error('Error resetting password:', err);
     } finally {
         await sequelize.close();
     }

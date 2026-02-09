@@ -1,17 +1,24 @@
-const { User } = require('./src/config/models');
-const sequelize = require('./src/config/db');
 
-async function listUsers() {
+const { User } = require('./src/config/models');
+const { sequelize } = require('./src/config/models');
+
+async function checkUser() {
     try {
-        await sequelize.authenticate();
-        console.log('Connection has been established successfully.');
-        const users = await User.findAll();
-        console.log('Users found:', users.map(u => ({ id: u.id, email: u.email, role: u.role, password_preview: u.password ? u.password.substring(0, 20) + '...' : 'NO_PASSWORD' })));
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        const email = 'merertuphilip@gmail.com';
+        const user = await User.findOne({ where: { email } });
+
+        if (user) {
+            console.log(`User found: ${user.name} (${user.email})`);
+            console.log(`Role: ${user.role}`);
+            console.log(`User ID: ${user.id}`);
+        } else {
+            console.log(`User with email ${email} NOT found.`);
+        }
+    } catch (err) {
+        console.error('Error checking user:', err);
     } finally {
         await sequelize.close();
     }
 }
 
-listUsers();
+checkUser();
