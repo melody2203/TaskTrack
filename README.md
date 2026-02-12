@@ -19,7 +19,7 @@ A collaborative task accomplishment management system where project managers ass
 
 ## 👥 User Roles
 
-- **Project Manager:** Create, assign, and monitor tasks
+- **Project Manager:** Create, assign, edit, delete and monitor tasks
 - **Team Member:** View assigned tasks and mark work as completed
 
 ## ⚙️ Setup
