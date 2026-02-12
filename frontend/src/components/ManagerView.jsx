@@ -279,7 +279,7 @@ const ManagerView = ({ tasks, refreshTasks }) => {
                 </section>
             </div>
 
-            {/* Custom Delete Modal - At the very end to ensure it sits on top */}
+            {/* Custom Delete Modal-At the very end to ensure it sits on top */}
             {showDeleteConfirm && (
                 <div
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]"

@@ -97,7 +97,7 @@ const MemberView = ({ tasks, refreshTasks }) => {
                     </div>
                 ) : (
                     <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-12 text-center">
-                        <p className="text-gray-400 font-medium">No tasks assigned to you right now. Take a break! ☕</p>
+                        <p className="text-gray-400 font-medium">No tasks assigned to you right now. Take a break and enjoy! ☕</p>
                     </div>
                 )}
             </section>
